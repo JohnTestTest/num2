@@ -324,36 +324,54 @@ def load_vlan(task):
     
 
 
-The next part of the script is effectively what executes first and precedes our two custom functions (with will only execute upon certain conditions). Let&#39;s look at it. First we use the OS and Subprocess python modules to first execute the shell command ```pyats learn ospf --testbed-file testbed.yaml --output ospf-current``` to relearn the current state of the network&#39;s OSPF configs, and then run a diff between the current configs, and our previously saved golden config – ```pyats diff desired-ospf/ ospf-current –output ospfdiff```. We then read the output and search for the string ```Diff can be found```. If a difference is found, we are alerted to the discrepancy and offered the choice to rollback to our desired state.
+The next part of the script is effectively what executes first and precedes custom functions (with will only execute upon certain conditions). Let&#39;s look at it. First we use the OS and Subprocess python modules to first execute the shell command ```pyats pyats learn config vlan --testbed-file testbed.yaml --output current-config``` to relearn the current state of the network&#39;s runnings configs and well as currents VLANs, and then run a diff between the current configs, and our previously saved golden config – ```["pyats", "diff", "golden-config/", "current-config", "--output", "configs-diff"]```. We then read the output and search for the string ```Diff can be found```. If a difference is found, we are alerted to the discrepancy and offered the choice to rollback to our desired state.
 
 ```python
-current = "pyats learn ospf --testbed-file testbed.yaml --output ospf-current"
+current = "pyats learn config vlan --testbed-file testbed.yaml --output current-config"
 os.system(current)
-command = subprocess.run(["pyats", "diff", "desired-ospf/", "ospf-current", "--output", "ospfdiff"], stdout=subprocess.PIPE)
+command = subprocess.run(["pyats", "diff", "golden-config/", "current-config", "--output", "configs-diff"], stdout=subprocess.PIPE)
 stringer = str(command)
 if "Diff can be found" in stringer:
     os.system(clear_command)
     print(Fore.CYAN + "#" * 70)
-    print(Fore.RED + "ALERT: " + Style.RESET_ALL + "CURRENT OSPF CONFIGURATIONS ARE NOT IN SYNC WITH DESIRED STATE!")
+    print(Fore.RED + "ALERT: " + Style.RESET_ALL + "CURRENT CONFIGURATIONS ARE NOT IN SYNC WITH GOLDEN CONFIGS!")
     print(Fore.CYAN + "#" * 70)
     print("\n")
     answer = input(Fore.YELLOW +
-            "Would you like to reverse the current OSPF configuration back to its desired state? " + Style.RESET_ALL + "<y/n>: "
+            "Would you like to reverse the current configuration back to their golden state? " + Style.RESET_ALL + "<y/n>: "
 )
 ```
 
-Should we answer &quot;y&quot; and affirm our decision to rollback, the script will first remove all current ospf and diff artefacts before calling our ```clean_ospf``` custom function, which, in turn, calls our ```desired-ospf``` function and prints the output.
+Should we answer &quot;y&quot; and affirm our decision to rollback, the script will trigger the execution of our custom functions, first beginning with our rollback - moving our basic SSH OOB configs into the running-config before rebuilding our network to its desired state:
 
 ```python
-    if answer == "y":
+ if answer == "y":
         def main() -> None:
-            clean_up = "rm -r ospfdiff ospf-current"
+            clean_up = "rm -r configs-diff current-config"
             os.system(clean_up)
             os.system(clear_command)
             nr = InitNornir(config_file="config.yaml")
-            output = nr.run(task=clean_ospf)
-            print_title("REVERSING OSPF CONFIGURATION BACK INTO DESIRED STATE")
-            print_result(output)
+            wipe_targets = nr.filter(all="yes")
+            wipe_results = wipe_targets.run(task=rollback_golden)
+            yaml_targets = nr.filter(all="yes")
+            yaml_results = yaml_targets.run(task=load_vars)
+            base_targets = nr.filter(all="yes")
+            base_results = base_targets.run(task=load_base)
+            isis_targets = nr.filter(routing="yes")
+            isis_results = isis_targets.run(task=load_isis)
+            ether_targets = nr.filter(etherchannel="yes")
+            ether_results = ether_targets.run(task=load_ether)
+            trunk_targets = nr.filter(trunking="yes")
+            trunk_results = trunk_targets.run(task=load_trunking)
+            vlan_targets = nr.filter(vlan="yes")
+            vlan_results = vlan_targets.run(task=load_vlan)
+            print_result(wipe_results)
+            print_result(yaml_results)
+            print_result(base_results)
+            print_result(isis_results)
+            print_result(ether_results)
+            print_result(trunk_results)
+            print_result(vlan_results)
 
         if __name__ == '__main__':
                 main()
