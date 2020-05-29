@@ -448,9 +448,9 @@ For our final validation, let&#39;s rerun the script and ensure that we are now 
 Excellent! Everything is back to the way it should be.
 As you can see, combining Nornir with pyATS can allow us to easily monitor and rollback our network to ensure we are compliant with our desired state of the network.
 
-You can download the script and all subsequent configurations at:
-[https://github.com/IPvZero/pynir2](https://github.com/IPvZero/pynir2)
 
+### About Me
+My name's John McGovern, otherwise known as IPvZero, and I am a Networking and Automation enthusiast. I create instructional videos on my Youtube channel and share many scripts I create via my Twitter feed.
 
 ### Contact
 
