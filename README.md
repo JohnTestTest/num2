@@ -227,7 +227,7 @@ After initially configuring our username, password, SSH configuration and manage
 
 With our "clean" configuration now committed to flash (given us an easy solution to remove stale configurations and start afresh), let&#39;s deploy the ```configure-network.py``` script to build our network to its desired state. First the script loads in our definition files:
 
-![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/2.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/22.png?raw=true)
 
 Before building our configurations from our Jinja2 templates and pushing them out to the devices:
 
