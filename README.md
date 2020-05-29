@@ -436,24 +436,20 @@ Upon examination it is clear now that these configuration are certainly not mean
 
 ![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/11.png?raw=true)
 
-This selection triggers Nornir to execute our custom functions that remove all current OSPF configs and artefacts before redeploying OSPF as specified in our ```host_vars``` definition files.
+This selection triggers Nornir to execute our custom functions, which first strip away our current configurations by injecting the golden commit from Flash into the the running-config, before removing all diff and current artefacts and rebuilding our network from scratch, as specified in our definition files:
 
-First the OSPF configurations are identified by the show output, and then negated:
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/12.png?raw=true)
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/20.png?raw=true)
-
-Pynir then pulls out desired state from our host varables, builds our configuration using the Jinja2 template, and pushes out the config: ![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/21.png?raw=true)
 
 For our final validation, let&#39;s rerun the script and ensure that we are now in compliance with our desired state:
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/22.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/13.png?raw=true)
 
 Excellent! Everything is back to the way it should be.
-
-As you can see, combining Nornir with pyATS can allow us to easily monitor and rollback our network to ensure we are compliant with our desired state of the network. As demonstrated, the largest challenge was finding a workaround to remove all undesired OSPF configurations. With modern devices with APIs, with options for candidate configurations, etc, this problem vanishes. Unfortunately, however, we still need to deal with older devices that were not built with automation in mind, and we have to create inventive and sometimes inefficient workarounds to solve a particular problem. This script is an attempt at doing that.
+As you can see, combining Nornir with pyATS can allow us to easily monitor and rollback our network to ensure we are compliant with our desired state of the network.
 
 You can download the script and all subsequent configurations at:
-[https://github.com/IPvZero/pynir](https://github.com/IPvZero/pynir)
+[https://github.com/IPvZero/pynir2](https://github.com/IPvZero/pynir2)
 
 
 ### Contact
