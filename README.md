@@ -409,11 +409,17 @@ else:
 ------------------------------------------------------------------------------------------------------------------------------
 ## Demo - Let's Break The Network!
 
-Now that we understand the logic of the script, let&#39;s perform a demo and see the workflow in action. Now remember, we have already deployed our initial desired state and captured that snapshot using both the ```nornir-ospf.py``` and ```capture-golden``` scripts. Let&#39;s first &quot;break&quot; the network by adding some unwanted OSPF configurations on R8:
+Now that we understand the logic of the script, let&#39;s perform a demo and see the workflow in action. Let's add some unwanted configurations to a few of our devices:
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/14.png?raw=true)
 
-Now the current state of our OSPF network does not match the configuration specified in our desired state. Let&#39;s run the ```Pynir.py``` script and see if it detects the change. ```Pynir.py``` first starts learning the current OSPF configurations:
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/5.png?raw=true)
+
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/6.png?raw=true)
+
+
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/7.png?raw=true)
+
+Now the current state of our network does not match the configuration specified in our desired state. Let&#39;s run the ```Pynir2.py``` script and see if it detects the change. ```Pynir.py``` first starts learning the current OSPF configurations:
 
 ![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/15.png?raw=true)
 
