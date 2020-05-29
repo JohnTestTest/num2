@@ -273,7 +273,7 @@ def rollback_golden(task):
     task.run(task=send_interactive,name="Rolling Back...",interact_events=cmds)
 ```
 
-Next we create a custom function called ```load_vars``` which will loads our host variable definition files into memory and all us to access the relevant Python dictionary keys, as required:
+Next we create a custom function called ```load_vars``` which will loads our host variable definition files into memory, making them accessible, per host, via the newly created "facts" Python dictionary key:
 
 ```python
 def load_vars(task):
