@@ -223,7 +223,7 @@ Let's begin the workflow.
 After initially configuring our username, password, SSH configuration and management IP addresses, we first execute our ```commit-golden.py``` script to commit those basic reachability configurations to Flash memory:
 
 
-![alt text](https://https://github.com/IPvZero/Pynir2/blob/master/images/1.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/1.png?raw=true)
 
 With our desired state now present on the network, let&#39;s immediately use pyATS to build a detailed profile of that configuration and grab our &quot;golden&quot; snapshot. Let&#39;s execute the ```capture-golden``` script:
 
