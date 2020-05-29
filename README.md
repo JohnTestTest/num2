@@ -281,6 +281,48 @@ def load_vars(task):
     task.host["facts"] = data.result
 ```
 
+Next we create a series of custom functions which each pull from the relevant definition files to build our state. This section is effectively a mirror of the ```configure-network.py``` script and will be used to rebuild our desired state once ```pynir2.py``` wipes the stale configurations from the devices:
+
+```python
+def load_base(task):
+    b = task.run(task=template_file,name="Buildling Base Configuration",template="base.j2", path="./templates")
+    task.host["base_config"] = b.result
+    base_output = task.host["base_config"]
+    base_send = base_output.splitlines()
+    task.run(task=netmiko_send_config, name="Pushing Base Commands", config_commands=base_send)
+
+def load_isis(task):
+    i = task.run(task=template_file,name="Building IS-IS Configuration",template="isis.j2", path="./templates")
+    task.host["isis_config"] = i.result
+    isis_output = task.host["isis_config"]
+    isis_send = isis_output.splitlines()
+    task.run(task=netmiko_send_config, name="Pushing IS-IS Commands", config_commands=isis_send)
+
+def load_ether(task):
+    e = task.run(task=template_file,name="Building Etherchannel Configuration",template="etherchannel.j2", path="./templates")
+    task.host["ether_config"] = e.result
+    ether_output = task.host["ether_config"]
+    ether_send = ether_output.splitlines()
+    task.run(task=netmiko_send_config, name="Pushing Etherchannel Commands", config_commands=ether_send)
+
+
+def load_trunking(task):
+    t = task.run(task=template_file,name="Building Trunk Configuration",template="trunking.j2", path="./templates")
+    task.host["trunk_config"] = t.result
+    trunk_output = task.host["trunk_config"]
+    trunk_send = trunk_output.splitlines()
+    task.run(task=netmiko_send_config, name="Pushing Trunk Commands", config_commands=trunk_send)
+
+
+def load_vlan(task):
+    v = task.run(task=template_file,name="Building VLAN Configuration",template="vlan.j2", path="./templates")
+    task.host["vlan_config"] = v.result
+    vlan_output = task.host["vlan_config"]
+    vlan_send = vlan_output.splitlines()
+    task.run(task=netmiko_send_config, name="Pushing VLAN Commands", config_commands=vlan_send)
+```
+    
+
 
 The next part of the script is effectively what executes first and precedes our two custom functions (with will only execute upon certain conditions). Let&#39;s look at it. First we use the OS and Subprocess python modules to first execute the shell command ```pyats learn ospf --testbed-file testbed.yaml --output ospf-current``` to relearn the current state of the network&#39;s OSPF configs, and then run a diff between the current configs, and our previously saved golden config – ```pyats diff desired-ospf/ ospf-current –output ospfdiff```. We then read the output and search for the string ```Diff can be found```. If a difference is found, we are alerted to the discrepancy and offered the choice to rollback to our desired state.
 
