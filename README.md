@@ -419,13 +419,13 @@ Now that we understand the logic of the script, let&#39;s perform a demo and see
 
 ![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/7.png?raw=true)
 
-Now the current state of our network does not match the configuration specified in our desired state. Let&#39;s run the ```Pynir2.py``` script and see if it detects the change. ```Pynir.py``` first starts learning the current OSPF configurations:
+Now the current state of our network does not match the configuration specified in our desired state. Let&#39;s run the ```Pynir2.py``` script and see if it detects the change. ```Pynir.py``` first starts learning the current network configurations:
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/15.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/8.png?raw=true)
 
 The change is detected and we are both notified and given the option to rollback. This time, we first want to inspect the changes, so let&#39;s answer &quot;n&quot; for No:
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/16.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/9.png?raw=true)
 
 The script terminates and leaves the relevant artefacts which we are free to inspect (notice the new directories ```ospf-current``` and ```ospfdiff```):
 
