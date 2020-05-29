@@ -14,43 +14,37 @@ A summary of the workflow we will follow in this tutorial is as follows:
 
 ----------------------------------------------------------------------------------------------------
 
-After we have conducted the initial steps we will then deploy a python script (```Pynir.py```) that will:
-
-- Invoke pyATS to profile the current OSPF configuration and compare it to the golden image previously captured.
-- If pyATS detects a difference – the terminal will prompt an alert signalling that OSPF in currently out of sync with desired state
-- The script will then give the user the option to rollback to desired state
-- Should the user answer **No** – the script ends and all current OSPF settings and Diff artefacts are left and are able to be inspected
-- Should the user answer **Yes** – the script invokes Nornir to first erase all OSPF configurations currently in the network, before reimplementing desired state by pulling information from host variable definition files and leveraging jinja2 templating.
-- Lastly, if the script detects that the current OSPF profile is identical to the OSPF desired state, it will generate a message informing us that all current configurations are matching our desired state.
-
-
 
 To begin, let&#39;s first look at the directory structure and setup:
 ```
-ipvzero@MSI:~/Nornir-Blog$ tree
+ipvzero@MSI:~/Pynir2$ tree
 .
-├── Pynir.py
 ├── capture-golden
+├── commit-golden.py
 ├── config.yaml
+├── configure_network.py
 ├── defaults.yaml
 ├── groups.yaml
 ├── host_vars
-│   ├── R1.yaml
-│   ├── R2.yaml
-│   ├── R3.yaml
-│   ├── R4.yaml
-│   ├── R5.yaml
-│   ├── R6.yaml
-│   ├── R7.yaml
-│   └── R8.yaml
+│   ├── S1.yaml
+│   ├── S2.yaml
+│   ├── S3.yaml
+│   ├── S4.yaml
+│   ├── S5.yaml
+│   ├── S6.yaml
+│   └── S7.yaml
 ├── hosts.yaml
-├── nornir-ospf.py
-├── nornir.log
+├── pynir2.py
 ├── templates
-│   └── ospf.j2
+│   ├── backtrunk.j2
+│   ├── base.j2
+│   ├── etherchannel.j2
+│   ├── isis.j2
+│   ├── trunking.j2
+│   └── vlan.j2
 └── testbed.yaml
 
-2 directories, 18 files
+2 directories, 22 files
 ```
 
 
