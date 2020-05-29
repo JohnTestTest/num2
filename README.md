@@ -423,21 +423,18 @@ Now the current state of our network does not match the configuration specified 
 
 ![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/8.png?raw=true)
 
-The change is detected and we are both notified and given the option to rollback. This time, we first want to inspect the changes, so let&#39;s answer &quot;n&quot; for No:
+The change is detected and we are both notified and given the option to rollback. This time, we first want to inspect the changes, so let&#39;s answer &quot;n&quot; for No. The script terminates and leaves the relevant artefacts which we are free to inspect (notice the new directories ```current-config``` and ```configs-diff```):
 
 ![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/9.png?raw=true)
 
-The script terminates and leaves the relevant artefacts which we are free to inspect (notice the new directories ```ospf-current``` and ```ospfdiff```):
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/17.png?raw=true)
+We can now freely examine these changes and decide if we want to erase them by performing a rollback, or leave them and updating our host definitions:
 
-We can now freely examine these changes and decide if we want to erase them by performing a rollback, or leave them and updating our OSPF definitions:
-
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/18.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/10.png?raw=true)
 
 Upon examination it is clear now that these configuration are certainly not meant to be present in the network. We then rerun Pynir, this time choosing &quot;y&quot; to rollback to our desired state:
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/19.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/11.png?raw=true)
 
 This selection triggers Nornir to execute our custom functions that remove all current OSPF configs and artefacts before redeploying OSPF as specified in our ```host_vars``` definition files.
 
