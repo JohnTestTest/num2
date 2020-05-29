@@ -379,16 +379,16 @@ Should we answer &quot;y&quot; and affirm our decision to rollback, the script w
 
 Should we choose **not** to rollback, however, and instead want to inspect those changes in detail - by selecting &quot;n&quot; the script simply terminates and leaves all artefacts for our inspection.
 
-Lastly, should the script detect no changes between the current state of our OSPF network and the configurations in our golden capture – the script simply ends and informs us that all OSPF configurations are matching desired state:
+Lastly, should the script detect no changes between the current state of our network and the configurations in our golden capture – the script simply ends and informs us that all network configurations are matching desired state:
 
 
 ```python
 else:
-    clean_up = "rm -r ospfdiff ospf-current"
+    clean_up = "rm -r configs-diff current-config"
     os.system(clean_up)
     os.system(clear_command)
     print("*" * 75)
-    print(Fore.GREEN + "Good news! OSPF configurations are matching desired state!" + Style.RESET_ALL)
+    print(Fore.GREEN + "Good news! Current configurations are matching their golden state!" + Style.RESET_ALL)
     print("*" * 75)
 
 ```
