@@ -234,15 +234,18 @@ Before building our configurations from our Jinja2 templates and pushing them ou
 ![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/3.png?raw=true)
 
 
-pyATS has successfully profiled our desired state and you will notice the addition of a new directory called ```desired-ospf``` which houses of all of our detailed OSPF information for each device. 
-Now that we have pushed our desired state and successfully created a snapshot for future comparison, let&#39;s look at the main script which we will use for our OSPF management going forward, ```Pynir.py```. The script is relatively long so let&#39;s break it down into sections. First we begin with our imports - and I have also included a Pyfiglet banner for purely aesthetic purposes (who doesn&#39;t like to make their scripts pretty, right?).
+Next, we immediately execute the bash script ```capture-golden``` and invoke pyATS to capture a detailed profile of this desired state for future comparisons:
+
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/4.png?raw=true)
+
+Now that we have pushed our desired state and successfully created a snapshot for future comparison, let&#39;s look at the main script which we will use for our OSPF management going forward, ```Pynir2.py```. The script is relatively long so let&#39;s break it down into sections. First we begin with our imports - and I have also included a Pyfiglet banner for purely aesthetic purposes (who doesn&#39;t like to make their scripts pretty, right?).
 
 ```python
 import os
 import subprocess
-import colorama
 from colorama import Fore, Style
 from nornir import InitNornir
+from nornir_scrapli.tasks import send_command, send_interactive
 from nornir.plugins.tasks.networking import netmiko_send_command
 from nornir.plugins.functions.text import print_result, print_title
 from nornir.plugins.tasks.networking import netmiko_send_config
@@ -256,6 +259,7 @@ os.system(clear_command)
 custom_fig = Figlet(font='isometric3')
 print(custom_fig.renderText('pyNIR'))
 ```
+
 Next, we create a custom function called ```clean_ospf```. The first challenge of the script was to find a way to strip away all OSPF configurations, should that be required. The problem with automating over legacy devices with no API capabilities, however, is that we are heavily reliant on screen-scraping – an inelegant and unfortunately necessary solution. To do so, I made the decision to use Nornir to execute a ```show run | s ospf``` on all devices, saved the resulting output, and began screen-scraping to identify digits in the text. The aim here was to identify any OSPF process IDs which could then be extracted and used to negate the process by executing a ```no router opsf```; followed by the relevant process ID. The challenge here is that the show command output would also include area ID information – and OSPFs most common area configuration is for area 0. Of course ```router ospf 0``` is not a legal command, so in order to avoid this I included a conditional statement that would skip over and ```continue``` past any number zeros in the output. The second challenge would be avoiding needless repetition. Should OSPF be configured via the interfaces, the resulting show output could, for example, have multiple: ```ip ospf 1 area 0```
 ```ip ospf 1 area 0```.
 Parsing out this information could lead to the script executing multiple ```no router ospf 1```; commands which is, of course, unnecessary. To avoid this, I elected to push all output into a python list, and from there remove all duplicates. There is still, however, an inefficiency given that the show output could, for example, show a multi-area OSPF configuration all within the same process. This could result in a script seeing an ```ip ospf 1 area 5``` configuration and attempting to execute a superfluous ```no router ospf 5```. However, given that the script has protections against repetitive execution, and that routers will have limited areas configured per device (maybe 3 different areas at most per device, if at all), I made the decision that this was an acceptable inefficiency. Like I say, there is nothing elegant about screen-scraping and sometimes a 90% solution is better than no solution:
