@@ -141,7 +141,7 @@ ip router isis
 
 This template will simply reference the Keys specificed in our host\_var yaml files and populate the template with their corresponding Values to build our desired IS-IS configuration.
 
-You will notice we have a ```nornir-ospf.py``` script. This is the script we will use to first initially push our desired state onto the routers. This script simply pulls desired state from our ```host_vars``` and pushes them through our Jinja2 template onto the network. In other words, it does not remove old stale configs (like ```Pynir.py``` will) so the assumption here is that we are working with a blank slate on the devices. Let&#39;s look inside the script:
+As stated earlier, we have a ```configure-network.py``` script. This is the script we will use to first initially push our desired state onto the routers. This script simply pulls desired state from our ```host_vars``` and pushes them through our Jinja2 template onto the network. In other words, it does not remove old stale configs (like ```Pynir2.py``` will) so the assumption here is that we are working with a blank slate on the devices other than our basic OOB SSH configurations. Let&#39;s look inside the script:
 
 ```python
 from nornir import InitNornir
@@ -150,24 +150,80 @@ from nornir.plugins.tasks.text import template_file
 from nornir.plugins.functions.text import print_result
 from nornir.plugins.tasks.networking import netmiko_send_config
 
-def load_ospf(task):
-    data = task.run(task=load_yaml,file=f'./host_vars/{task.host}.yaml')
-    task.host["OSPF"] = data.result["OSPF"]
-    r = task.run(task=template_file, template="ospf.j2", path="./templates")
-    task.host["config"] = r.result
-    output = task.host["config"]
-    send = output.splitlines()
-    task.run(task=netmiko_send_config, name="IPvZero Commands", config_commands=send)
+nr = InitNornir(config_file="config.yaml")
 
-nr = InitNornir()
-results = nr.run(load_ospf)
-print_result(results)
+def load_vars(task):
+    data = task.run(task=load_yaml,file=f'./host_vars/{task.host}.yaml')
+    task.host["facts"] = data.result
+
+def load_base(task):
+    b = task.run(task=template_file, template="base.j2", path="./templates")
+    task.host["base_config"] = b.result
+    base_output = task.host["base_config"]
+    base_send = base_output.splitlines()
+    task.run(task=netmiko_send_config, name="Base Commands", config_commands=base_send)
+
+def load_isis(task):
+    i = task.run(task=template_file, template="isis.j2", path="./templates")
+    task.host["isis_config"] = i.result
+    isis_output = task.host["isis_config"]
+    isis_send = isis_output.splitlines()
+    task.run(task=netmiko_send_config, name="IS-IS Commands", config_commands=isis_send)
+
+def load_ether(task):
+    e = task.run(task=template_file, template="etherchannel.j2", path="./templates")
+    task.host["ether_config"] = e.result
+    ether_output = task.host["ether_config"]
+    ether_send = ether_output.splitlines()
+    task.run(task=netmiko_send_config, name="Etherchannel Commands", config_commands=ether_send)
+
+
+def load_trunking(task):
+    t = task.run(task=template_file, template="trunking.j2", path="./templates")
+    task.host["trunk_config"] = t.result
+    trunk_output = task.host["trunk_config"]
+    trunk_send = trunk_output.splitlines()
+    task.run(task=netmiko_send_config, name="Trunk Commands", config_commands=trunk_send)
+
+
+def load_vlan(task):
+    v = task.run(task=template_file, template="vlan.j2", path="./templates")
+    task.host["vlan_config"] = v.result
+    vlan_output = task.host["vlan_config"]
+    vlan_send = vlan_output.splitlines()
+    task.run(task=netmiko_send_config, name="VLAN Commands", config_commands=vlan_send)
+
+
+yaml_targets = nr.filter(all="yes")
+yaml_results = yaml_targets.run(task=load_vars)
+base_targets = nr.filter(all="yes")
+base_results = base_targets.run(task=load_base)
+isis_targets = nr.filter(routing="yes")
+isis_results = isis_targets.run(task=load_isis)
+ether_targets = nr.filter(etherchannel="yes")
+ether_results = ether_targets.run(task=load_ether)
+trunk_targets = nr.filter(trunking="yes")
+trunk_results = trunk_targets.run(task=load_trunking)
+vlan_targets = nr.filter(vlan="yes")
+vlan_results = vlan_targets.run(task=load_vlan)
+print_result(yaml_results)
+print_result(base_results)
+print_result(isis_results)
+print_result(ether_results)
+print_result(trunk_results)
+print_result(vlan_results)
+print_result(base_results)
 ```
 
 
-This is a fairly typical script which will pull information from the desired state specified in our ```host_vars``` yaml files, save the information and use those values to build our configurations based on the syntax specified in our Jinja2 template. Nornir then invokes Netmiko to push those configurations out to all of our respective devices in the network. Now that we understand what&#39;s going on, let&#39;s execute that script and push our desired state onto our otherwise blank network:
+This script will pull information from the desired state specified in our ```host_vars``` yaml files, save the information and use those values to build our configurations based on the syntax specified in our Jinja2 template. Nornir then invokes Netmiko to push those configurations out to all of our respective devices in the network. Notice each configuration is filtered to target devices only the relevant configurations should be pushed. 
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/6.png?raw=true)
+Let's begin the workflow.
+
+After initially configuring our username, password, SSH configuration and management IP addresses, we first execute our ```commit-golden.py``` script to commit those basic reachability configurations to Flash memory:
+
+
+![alt text](https://https://github.com/IPvZero/Pynir2/blob/master/images/1.png?raw=true)
 
 With our desired state now present on the network, let&#39;s immediately use pyATS to build a detailed profile of that configuration and grab our &quot;golden&quot; snapshot. Let&#39;s execute the ```capture-golden``` script:
 
