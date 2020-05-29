@@ -54,47 +54,94 @@ As you can see we can our basic Nornir yaml files:
 ```groups.yaml```
 ```defaults.yaml```
 
-Notice that there is also a ```testbed.yaml``` file to allow pyATS to connect into and profile the network. Next, you&#39;ll notice we also have two directories. The first one called ```host_vars``` which will house our OSPF host variables (note: you can use the ```hosts.yaml``` file instead, but I have chosen to create a separate directory to perform this task). The second is called ```templates``` which will house our OSPF Jinja2 template.
+Notice that there is also a ```testbed.yaml``` file to allow pyATS to connect into and profile the network. Next, you&#39;ll notice we also have two directories. The first one called ```host_vars``` which will house our OSPF host variables (note: you can use the ```hosts.yaml``` file instead, but I have chosen to create a separate directory to perform this task). The second is called ```templates``` which will house our Jinja2 templates.
 
-Importantly, you&#39;ll notice a ```capture-golden``` file. This is a very simple bash script used to capture our &quot;golden&quot; snapshot of our desired OSPF state. It simply executes a pyATS command. You can type this command by hand should you wish, but since the output directory has to remain the same since it will be referenced by the ```Pynir.py``` script – for consistency, I have elected to execute it from a bash script to prevent me mistyping the output destination. Let&#39;s look inside to see what&#39;s going on:
+Importantly, you&#39;ll notice a ```capture-golden``` file. This is a very simple bash script used to capture our &quot;golden&quot; snapshot of our desired network state as configured by the ```configure-network.py``` script. It simply executes a pyATS command. You can type this command by hand should you wish, but since the output directory has to remain the same since it will be referenced by the ```Pynir2.py``` script – for consistency, I have elected to execute it from a bash script to prevent me mistyping the output destination. Let&#39;s look inside to see what&#39;s going on:
 
 ```bash
 #!/bin/bash
-pyats learn ospf --testbed-file testbed.yaml --output desired-ospf
+pyats learn config vlan --testbed-file testbed.yaml --output golden-config
 ```
 
 
-As you can see the bash script simply tells pyATS to learn the network&#39;s OSPF configurations and save the output into a directory called ```desired-ospf```. This directory will act as our reference point.
+As you can see the bash script simply tells pyATS to learn the network&#39;s running-configuration as well as vlan configuration and save the output into a directory called ```golden-config```. This directory will act as our future reference point.
 
-Let&#39;s take a look inside the ```host_vars``` directory and see what our host variable definition files look like. For brevity, let&#39;s just look at ```R1.yaml```:
+Let&#39;s take a look inside the ```host_vars``` directory and see what our host variable definition files look like. For brevity, let&#39;s just look at ```S3.yaml```:
 
 ```
 ---
-OSPF:
-    process: 1
-    id : 1.1.1.1
-    networks:
-      - net: 192.168.1.0
-        wildcard: 0.0.0.255
-        area: 0
-      - net: 192.168.10.0
-        wildcard: 0.0.0.255
-        area: 0
+---
+ISIS:
+    nsap: 49.0001.0000.0000.0003.00
+    level: level-1-2
+    interfaces:
+        g0/1:
+            sub_iface: g0/1.10
+            encapsulation: dot1q 10
+        g0/2:
+            sub_iface: g0/2.10
+            encapsulation: dot1q 10
+        loo0:
+            ipaddr: 3.3.3.3 255.255.255.255
+
+
+Etherchannel:
+    interfaces:
+        - gigabitEthernet1/2
+        - gigabitEthernet1/3
+    group: 1
+    protocol: active
+
+Trunked:
+    trunk:
+        interfaces:
+            gig0/3:
+                allowed_vlans: 10,20
+            gig1/0:
+                allowed_vlans: 30,40
+            gig1/1:
+                allowed_vlans: 50,60
+
+
+VLAN:
+  - number: 10
+    name: TEN
+  - number: 20
+    name: TWENTY
+  - number: 30
+    name: THIRTY
+  - number: 40
+    name: FORTY
 ```
 
-We have a very basic OSPF setup which lists the process ID number, the RID, and the network statement configs for the router. R2 through to R8 have very similar configurations. As this is simply a demo, I have created easily identifiable variations between files. For example, R5 uses OSPF process ID of 5, with a RID of 5.5.5.5 and the networks it advertises are &quot;192.168.5.0&quot; and &quot;192.168.50.0&quot;. These files represent our desired state. In other words, this is what our network &quot;should look like&quot;.
+We have definitions for our network's desired state made up of our IS-IS, Etherchannel, Trunks and VLAN configs. This could,  of course, be expanded to include many more definitions but for the sake of the demo, I felt this was enough.
 
-Next, let&#39;s look inside the templates directory and open our ```ospf.j2``` file:
+Next, let&#39;s look inside the templates directory and open our ```isis.j2``` file, as an example:
 
 ```
-router ospf {{ host.OSPF.process }}
-router-id {{ host.OSPF.id }}
-{% for n in host.OSPF.networks %}
-network {{ n.net }} {{ n.wildcard }} area {{ n.area }}
+{% if 'ISIS' in host.facts %}
+router isis
+net {{ host.facts.ISIS.nsap }}
+is-type {{ host.facts.ISIS.level }}
+interface loopback0
+ip address {{ host.facts.ISIS.interfaces.loo0.ipaddr }}
+ip router isis
+{% set john = host.facts.ISIS.interfaces %}
+{% for key in john %}
+interface {{ key }}
+no switchport
+no shut
+{% if 'sub_iface' in john[key] %}
+interface {{ john[key]['sub_iface'] }}
+encapsulation {{ john[key]['encapsulation'] }}
+ip unnumbered loopback0
+ip router isis
+{% endif %}
 {% endfor %}
+{% endif %}
 ```
 
-This template will simply reference the Keys specificed in our host\_var yaml files and populate the template with their corresponding Values to build our desired OSPF configuration.
+This template will simply reference the Keys specificed in our host\_var yaml files and populate the template with their corresponding Values to build our desired IS-IS configuration.
 
 You will notice we have a ```nornir-ospf.py``` script. This is the script we will use to first initially push our desired state onto the routers. This script simply pulls desired state from our ```host_vars``` and pushes them through our Jinja2 template onto the network. In other words, it does not remove old stale configs (like ```Pynir.py``` will) so the assumption here is that we are working with a blank slate on the devices. Let&#39;s look inside the script:
 
