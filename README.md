@@ -36,7 +36,6 @@ ipvzero@MSI:~/Pynir2$ tree
 ├── hosts.yaml
 ├── pynir2.py
 ├── templates
-│   ├── backtrunk.j2
 │   ├── base.j2
 │   ├── etherchannel.j2
 │   ├── isis.j2
@@ -69,7 +68,6 @@ As you can see the bash script simply tells pyATS to learn the network&#39;s run
 Let&#39;s take a look inside the ```host_vars``` directory and see what our host variable definition files look like. For brevity, let&#39;s just look at ```S3.yaml```:
 
 ```
----
 ---
 ISIS:
     nsap: 49.0001.0000.0000.0003.00
