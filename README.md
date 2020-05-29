@@ -1,10 +1,8 @@
-
 ---
-title: "Tutorial 2: Combining Nornir with pyATS"
+title: "Tutorial2: Combining Nornir with pyATS"
 date: "2029-05-03"
 tags: ["nornir", "pyATS"]
 ---
-
 This tutorial aims to provide a simple use-case for combining Nornir and pyATS together in order to profile your current network configurations and implement desired state - as specified in host variable definition files.
 
 A summary of the workflow we will follow in this tutorial is as follows:
