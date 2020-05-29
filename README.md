@@ -141,6 +141,20 @@ ip router isis
 
 This template will simply reference the Keys specificed in our host\_var yaml files and populate the template with their corresponding Values to build our desired IS-IS configuration.
 
+A special note, however, should be made with respect to the VLAN Jinja2 template - whilst we can erase almost every configuration by moving our golden capture in Flash memory into the running-configuration, it is important to note that VLAN configuration will NOT be removed. As such, to handle this obstacle, the Jinja2 template always begins with an explicit erasure of all possible VLAN configurations before applying desired state. In conjunction with our Flash rollback, this will allow us to successfully remove all stale configs before applying our desired state:
+
+```
+{% if 'VLAN' in host.facts %}
+no vlan 2-1001
+no vlan 1006-4094
+{% set john = host.facts.VLAN %}
+{% for n in john %}
+vlan {{ n.number }}
+name {{ n.name }}
+{% endfor %}
+{% endif %}
+```
+
 As stated earlier, we have a ```configure-network.py``` script. This is the script we will use to first initially push our desired state onto the routers. This script simply pulls desired state from our ```host_vars``` and pushes them through our Jinja2 template onto the network. In other words, it does not remove old stale configs (like ```Pynir2.py``` will) so the assumption here is that we are working with a blank slate on the devices other than our basic OOB SSH configurations. Let&#39;s look inside the script:
 
 ```python
