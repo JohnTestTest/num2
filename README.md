@@ -260,40 +260,25 @@ custom_fig = Figlet(font='isometric3')
 print(custom_fig.renderText('pyNIR'))
 ```
 
-Next, we create a custom function called ```clean_ospf```. The first challenge of the script was to find a way to strip away all OSPF configurations, should that be required. The problem with automating over legacy devices with no API capabilities, however, is that we are heavily reliant on screen-scraping – an inelegant and unfortunately necessary solution. To do so, I made the decision to use Nornir to execute a ```show run | s ospf``` on all devices, saved the resulting output, and began screen-scraping to identify digits in the text. The aim here was to identify any OSPF process IDs which could then be extracted and used to negate the process by executing a ```no router opsf```; followed by the relevant process ID. The challenge here is that the show command output would also include area ID information – and OSPFs most common area configuration is for area 0. Of course ```router ospf 0``` is not a legal command, so in order to avoid this I included a conditional statement that would skip over and ```continue``` past any number zeros in the output. The second challenge would be avoiding needless repetition. Should OSPF be configured via the interfaces, the resulting show output could, for example, have multiple: ```ip ospf 1 area 0```
-```ip ospf 1 area 0```.
-Parsing out this information could lead to the script executing multiple ```no router ospf 1```; commands which is, of course, unnecessary. To avoid this, I elected to push all output into a python list, and from there remove all duplicates. There is still, however, an inefficiency given that the show output could, for example, show a multi-area OSPF configuration all within the same process. This could result in a script seeing an ```ip ospf 1 area 5``` configuration and attempting to execute a superfluous ```no router ospf 5```. However, given that the script has protections against repetitive execution, and that routers will have limited areas configured per device (maybe 3 different areas at most per device, if at all), I made the decision that this was an acceptable inefficiency. Like I say, there is nothing elegant about screen-scraping and sometimes a 90% solution is better than no solution:
+Next, we create a custom function called ```rollback_golden``` - this function leverages Scrapli with interactive mode and will be invoked should ```pynir2.py``` detect configuration drift and we want to wipe all current configurations
 
 ```python
-def clean_ospf(task):
-    r = task.run(task=netmiko_send_command, name="Identifying Current OSPF", command_string = "show run | s ospf")
-    output = r.result
-    my_list = []
-    num = [int(s) for s in output.split() if s.isdigit()]
-    for x in num:
-        if x == 0:
-            continue
-        my_list.append("no router ospf " + str(x))
-    my_list = list(dict.fromkeys(my_list))
-    for commands in my_list:
-        task.run(task=netmiko_send_config, name="Removing Current OSPF", config_commands=commands)
-
-    desired_ospf(task)
+def rollback_golden(task):
+    cmds = [
+            ("configure replace flash:golden-commit",
+            "Enter Y if you are sure you want to proceed. ? [no]", False),
+            ("Y\n",
+            f"{task.host}#", False)
+]
+    task.run(task=send_interactive,name="Rolling Back...",interact_events=cmds)
 ```
 
-Now we have the ability to remove all current OSPF configuration, we create a custom function called ```desired_ospf```. This is almost identical to the earlier script and simply builds our configuration from ```host_vars``` definition files and pushes them through our jinja2 OSPF template and out to the devices:
-
-
+Next we create a custom function called ```load_vars``` which will loads our host variable definition files into memory and all us to access the relevant Python dictionary keys, as required:
 
 ```python
-def desired_ospf(task):
-    data = task.run(task=load_yaml, name="Pulling from Definition Files", file=f'./host_vars/{task.host}.yaml')
-    task.host["OSPF"] = data.result["OSPF"]
-    r = task.run(task=template_file, name="Building Desired State", template="ospf.j2", path="./templates")
-    task.host["config"] = r.result
-    output = task.host["config"]
-    send = output.splitlines()
-    task.run(task=netmiko_send_config, name="Implementing OSPF Desired State", config_commands=send)
+def load_vars(task):
+    data = task.run(task=load_yaml,file=f'./host_vars/{task.host}.yaml')
+    task.host["facts"] = data.result
 ```
 
 
