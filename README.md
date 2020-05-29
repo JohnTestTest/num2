@@ -225,9 +225,14 @@ After initially configuring our username, password, SSH configuration and manage
 
 ![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/1.png?raw=true)
 
-With our desired state now present on the network, let&#39;s immediately use pyATS to build a detailed profile of that configuration and grab our &quot;golden&quot; snapshot. Let&#39;s execute the ```capture-golden``` script:
+With our "clean" configuration now committed to flash (given us an easy solution to remove stale configurations and start afresh), let&#39;s deploy the ```configure-network.py``` script to build our network to its desired state. First the script loads in our definition files:
 
-![alt text](https://github.com/IPvZero/Nornir-Blog/blob/master/images/7.png?raw=true)
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/2.png?raw=true)
+
+Before building our configurations from our Jinja2 templates and pushing them out to the devices:
+
+![alt text](https://github.com/IPvZero/Pynir2/blob/master/images/3.png?raw=true)
+
 
 pyATS has successfully profiled our desired state and you will notice the addition of a new directory called ```desired-ospf``` which houses of all of our detailed OSPF information for each device. 
 Now that we have pushed our desired state and successfully created a snapshot for future comparison, let&#39;s look at the main script which we will use for our OSPF management going forward, ```Pynir.py```. The script is relatively long so let&#39;s break it down into sections. First we begin with our imports - and I have also included a Pyfiglet banner for purely aesthetic purposes (who doesn&#39;t like to make their scripts pretty, right?).
